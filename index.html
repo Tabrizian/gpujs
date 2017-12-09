@@ -1,0 +1,64 @@
+<html>
+    <head></head>
+    <body>
+        <script src="./lib/gpu.js"></script>
+        <script>
+            
+const random = function random(size) {
+    const ret = [];
+    for (let a = 0; a < size; ++a) {
+        ret[a] = [];
+        for (var i = 0; i < size; ++i) {
+            ret[a][i] = parseInt(Math.random() * 100);
+        }
+    }
+    return ret;
+}
+const gpu = new GPU();
+a = random(512)
+b = random(512)
+
+// Create the GPU accelerated function from a kernel
+// function that computes a single element in the
+// 512 x 512 matrix (2D array). The kernel function
+// is run in a parallel manner in the GPU resulting
+// in very fast computations! (...sometimes)
+const matMult = gpu.createKernel(function(a, b) {
+    var sum = 0;
+    for (var i = 0; i < 512; i++) {
+        sum += a[this.thread.y][i] * b[i][this.thread.x];
+    }
+    return sum;
+}).setOutput([512, 512]).setOutputToTexture(true);
+
+function multiply(a, b) {
+  var aNumRows = a.length, aNumCols = a[0].length,
+      bNumRows = b.length, bNumCols = b[0].length,
+      m = new Array(aNumRows);  // initialize array of rows
+  for (var r = 0; r < aNumRows; ++r) {
+    m[r] = new Array(bNumCols); // initialize the current row
+    for (var c = 0; c < bNumCols; ++c) {
+      m[r][c] = 0;             // initialize the current cell
+      for (var i = 0; i < aNumCols; ++i) {
+        m[r][c] += a[r][i] * b[i][c];
+      }
+    }
+  }
+  return m;
+}
+
+
+// Perform matrix multiplication on 2 matrices of size 512 x 512
+
+let startTime = window.performance.now();
+const c = matMult(a, b);
+let endTime = window.performance.now();
+console.log(endTime - startTime)
+
+startTime = window.performance.now()
+const d = multiply(a, b);
+endTime = window.performance.now()
+console.log(endTime - startTime)
+        </script>
+    </body>
+</html>
